@@ -88,6 +88,9 @@
       "react-native": "~0.74.1",
       "react-native-windows": "~0.74.1"
     },
+    "react-native-windows": {
+      "react-native": "$react-native"
+    },
     "prismjs": "^1.30.0"
   },
   "engines": {

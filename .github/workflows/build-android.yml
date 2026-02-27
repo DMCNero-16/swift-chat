@@ -19,6 +19,6 @@ jobs:
           java-version: '17'
       - name: Run build apk
         run: |
-          cd react-native && npm i
+          cd react-native && npm i --legacy-peer-deps
           cd android
           ./gradlew assembleDebug

@@ -34,7 +34,7 @@ jobs:
           cd react-native
           chmod +x release.sh
           ./release.sh ${{ env.NEW_VERSION }} ${{ env.NEW_VERSION_CODE }}
-          npm i
+          npm i --legacy-peer-deps
           cd ..
           git diff
           git add .
@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd react-native
-          npm install
+          npm install --legacy-peer-deps
       - name: Initialize react-native-windows
         run: |
           cd react-native

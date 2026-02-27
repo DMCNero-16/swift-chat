@@ -16,7 +16,11 @@ import { Platform } from 'react-native';
 import { isWindows } from '../../../utils/PlatformUtils.ts';
 
 const monoFont =
-  Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
+  Platform.OS === 'ios'
+    ? 'Menlo-Regular'
+    : isWindows
+      ? 'Consolas'
+      : 'monospace';
 import { useAppContext } from '../../../history/AppProvider.tsx';
 
 const CustomCodeHighlighter = React.lazy(

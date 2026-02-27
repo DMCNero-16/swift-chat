@@ -16,7 +16,11 @@ import { isWindows } from '../../../utils/PlatformUtils.ts';
 import { useAppContext } from '../../../history/AppProvider';
 
 const monoFont =
-  Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
+  Platform.OS === 'ios'
+    ? 'Menlo-Regular'
+    : isWindows
+      ? 'Consolas'
+      : 'monospace';
 import { getLatestHtmlCode, setLatestHtmlCode } from '../../util/DiffUtils';
 import { applyDiff } from '../../util/ApplyDiff';
 import { showInfo } from '../../util/ToastUtils';

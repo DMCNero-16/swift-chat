@@ -36,10 +36,14 @@ import { CustomTokenizer } from './markdown/CustomTokenizer.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ShareModule =
-  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-share').default
+    : null;
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const FileViewerModule =
-  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-file-viewer').default
+    : null;
 import Markdown from './markdown/Markdown.tsx';
 import ImageSpinner from './ImageSpinner.tsx';
 import { State, TapGestureHandler } from 'react-native-gesture-handler';
@@ -267,12 +271,9 @@ const CustomMessageComponent: React.FC<CustomMessageProps> = ({
   const handleImagePress = useCallback((pressMode: PressMode, url: string) => {
     if (pressMode === PressMode.Click) {
       if (FileViewerModule) {
-        FileViewerModule
-          .open(url)
-          .then(() => {})
-          .catch((error: Error) => {
-            console.log(error);
-          });
+        FileViewerModule.open(url).catch((error: Error) => {
+          console.log(error);
+        });
       } else {
         Linking.openURL(url).catch(console.log);
       }

@@ -16,14 +16,18 @@ import { ImageSource } from 'react-native-image-viewing/dist/@types';
 import { isMac } from '../../App.tsx';
 import { getFullFileUrl, saveFile } from '../util/FileUtils.ts';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires */
-const ShareModule: any =
-  Platform.OS !== 'windows' ? require('react-native-share').default : null;
-const FileViewerModule: any =
-  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
-const compressorModule: any =
+/* eslint-disable @typescript-eslint/no-var-requires */
+const ShareModule =
+  Platform.OS !== 'windows'
+    ? require('react-native-share').default
+    : null;
+const FileViewerModule =
+  Platform.OS !== 'windows'
+    ? require('react-native-file-viewer').default
+    : null;
+const compressorModule =
   Platform.OS !== 'windows' ? require('react-native-compressor') : null;
-/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires */
+/* eslint-enable @typescript-eslint/no-var-requires */
 const Video = compressorModule?.Video;
 const getVideoMetaData = compressorModule?.getVideoMetaData;
 import * as Progress from 'react-native-progress';
@@ -47,12 +51,9 @@ const MAX_VIDEO_SIZE = 8;
 
 const openInFileViewer = (url: string) => {
   if (FileViewerModule) {
-    FileViewerModule
-      .open(url)
-      .then(() => {})
-      .catch((error: Error) => {
-        console.log(error);
-      });
+    FileViewerModule.open(url).catch((error: Error) => {
+      console.log(error);
+    });
   } else {
     Linking.openURL(url).catch((error: Error) => {
       console.log(error);

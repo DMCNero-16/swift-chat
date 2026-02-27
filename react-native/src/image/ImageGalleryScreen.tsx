@@ -24,10 +24,14 @@ import { isMacCatalyst, isWindows } from '../utils/PlatformUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ShareModule =
-  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-share').default
+    : null;
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const FileViewerModule =
-  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-file-viewer').default
+    : null;
 import { CustomHeaderRightButton } from '../chat/component/CustomHeaderRightButton';
 
 type NavigationProp = NativeStackNavigationProp<RouteParamList>;

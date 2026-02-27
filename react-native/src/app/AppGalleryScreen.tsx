@@ -37,7 +37,9 @@ import { isMac } from '../App';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ShareModule =
-  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-share').default
+    : null;
 
 type NavigationProp = DrawerNavigationProp<RouteParamList>;
 

@@ -6,8 +6,9 @@ import {
 } from '../../storage/StorageUtils.ts';
 import { isMac } from '../../App.tsx';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires
-let ReactNativeHapticFeedback: any =
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires, prefer-const
+const ReactNativeHapticFeedback =
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   Platform.OS !== 'windows'
     ? require('react-native-haptic-feedback').default
     : null;

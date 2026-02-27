@@ -33,7 +33,9 @@ import Animated, {
 import RNFS from 'react-native-fs';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ShareModule =
-  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-share').default
+    : null;
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useTheme } from '../../../theme';
 import { isMac } from '../../../App.tsx';

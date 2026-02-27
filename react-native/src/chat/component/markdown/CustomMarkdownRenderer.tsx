@@ -31,8 +31,8 @@ const MathView =
   Platform.OS !== 'windows'
     ? require('react-native-math-view').default
     : // Fallback: render math as monospace text on Windows
-      ({math, style}: {math: string; style: object}) => (
-        <Text style={[{fontFamily: 'Consolas'}, style]}>{math}</Text>
+      ({ math, style }: { math: string; style: object }) => (
+        <Text style={[{ fontFamily: 'Consolas' }, style]}>{math}</Text>
       );
 import { ColorScheme } from '../../../theme';
 import MermaidCodeRenderer from './MermaidCodeRenderer';
@@ -42,7 +42,11 @@ import CopyButton from './CopyButton';
 import { isWindows } from '../../../utils/PlatformUtils.ts';
 
 const monoFont =
-  Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
+  Platform.OS === 'ios'
+    ? 'Menlo-Regular'
+    : isWindows
+      ? 'Consolas'
+      : 'monospace';
 
 const CustomCodeHighlighter = lazy(() => import('./CustomCodeHighlighter'));
 let mathViewIndex = 0;

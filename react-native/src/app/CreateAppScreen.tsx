@@ -28,7 +28,11 @@ import { isWindows } from '../utils/PlatformUtils';
 import DocumentPicker from 'react-native-document-picker';
 
 const monoFont =
-  Platform.OS === 'ios' ? 'Menlo' : isWindows ? 'Consolas' : 'monospace';
+  Platform.OS === 'ios'
+    ? 'Menlo'
+    : isWindows
+      ? 'Consolas'
+      : 'monospace';
 
 type NavigationProp = DrawerNavigationProp<RouteParamList>;
 

@@ -15,11 +15,12 @@ import {
 } from 'react-native';
 import { voiceChatService } from './service/VoiceChatService';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires */
 const keepAwakeModule =
   Platform.OS !== 'windows'
     ? require('@sayem314/react-native-keep-awake')
     : null;
+/* eslint-enable @typescript-eslint/no-var-requires */
 const activateKeepAwake: () => void =
   keepAwakeModule?.activateKeepAwake ?? (() => {});
 const deactivateKeepAwake: () => void =

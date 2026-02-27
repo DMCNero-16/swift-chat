@@ -15,12 +15,8 @@ import { vs2015, github } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { Platform } from 'react-native';
 import { isWindows } from '../../../utils/PlatformUtils.ts';
 
-const monoFont =
-  Platform.OS === 'ios'
-    ? 'Menlo-Regular'
-    : isWindows
-      ? 'Consolas'
-      : 'monospace';
+// prettier-ignore
+const monoFont = Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
 import { useAppContext } from '../../../history/AppProvider.tsx';
 
 const CustomCodeHighlighter = React.lazy(

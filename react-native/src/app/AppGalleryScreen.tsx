@@ -35,11 +35,10 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { showInfo } from '../chat/util/ToastUtils';
 import { isMac } from '../App';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires */
 const ShareModule =
-  Platform.OS !== 'windows'
-    ? require('react-native-share').default
-    : null;
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+/* eslint-enable @typescript-eslint/no-var-requires */
 
 type NavigationProp = DrawerNavigationProp<RouteParamList>;
 

@@ -18,13 +18,9 @@ import { getFullFileUrl, saveFile } from '../util/FileUtils.ts';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ShareModule =
-  Platform.OS !== 'windows'
-    ? require('react-native-share').default
-    : null;
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
 const FileViewerModule =
-  Platform.OS !== 'windows'
-    ? require('react-native-file-viewer').default
-    : null;
+  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
 const compressorModule =
   Platform.OS !== 'windows' ? require('react-native-compressor') : null;
 /* eslint-enable @typescript-eslint/no-var-requires */

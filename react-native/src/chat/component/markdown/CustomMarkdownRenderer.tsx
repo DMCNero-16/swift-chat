@@ -26,7 +26,7 @@ import Decimal from '@jsamr/counter-style/lib/es/presets/decimal';
 import Disc from '@jsamr/counter-style/lib/es/presets/disc';
 import { isAndroid } from '../../../utils/PlatformUtils.ts';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires */
 const MathView =
   Platform.OS !== 'windows'
     ? require('react-native-math-view').default
@@ -34,6 +34,7 @@ const MathView =
       ({ math, style }: { math: string; style: object }) => (
         <Text style={[{ fontFamily: 'Consolas' }, style]}>{math}</Text>
       );
+/* eslint-enable @typescript-eslint/no-var-requires */
 import { ColorScheme } from '../../../theme';
 import MermaidCodeRenderer from './MermaidCodeRenderer';
 import HtmlCodeRenderer from './HtmlCodeRenderer';
@@ -41,12 +42,8 @@ import CitationBadge from '../CitationBadge';
 import CopyButton from './CopyButton';
 import { isWindows } from '../../../utils/PlatformUtils.ts';
 
-const monoFont =
-  Platform.OS === 'ios'
-    ? 'Menlo-Regular'
-    : isWindows
-      ? 'Consolas'
-      : 'monospace';
+// prettier-ignore
+const monoFont = Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
 
 const CustomCodeHighlighter = lazy(() => import('./CustomCodeHighlighter'));
 let mathViewIndex = 0;

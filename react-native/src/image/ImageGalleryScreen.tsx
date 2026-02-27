@@ -22,16 +22,12 @@ import { ImageSource } from 'react-native-image-viewing/dist/@types';
 import { showInfo } from '../chat/util/ToastUtils';
 import { isMacCatalyst, isWindows } from '../utils/PlatformUtils';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires */
 const ShareModule =
-  Platform.OS !== 'windows'
-    ? require('react-native-share').default
-    : null;
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
 const FileViewerModule =
-  Platform.OS !== 'windows'
-    ? require('react-native-file-viewer').default
-    : null;
+  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
+/* eslint-enable @typescript-eslint/no-var-requires */
 import { CustomHeaderRightButton } from '../chat/component/CustomHeaderRightButton';
 
 type NavigationProp = NativeStackNavigationProp<RouteParamList>;

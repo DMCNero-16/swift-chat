@@ -8,11 +8,6 @@ import {
   NativeModules,
 } from 'react-native';
 import React, { useRef, useEffect, useCallback } from 'react';
-import {
-  ImagePickerResponse,
-  launchCamera,
-  launchImageLibrary,
-} from 'react-native-image-picker';
 import { ChatMode, FileInfo, FileType } from '../../types/Chat.ts';
 import {
   pick,
@@ -21,12 +16,24 @@ import {
 } from 'react-native-document-picker';
 import { saveFile } from '../util/FileUtils.ts';
 import RNFS from 'react-native-fs';
-import {
-  createVideoThumbnail,
-  getImageMetaData,
-  getVideoMetaData,
-  Image as Img,
-} from 'react-native-compressor';
+
+let launchCamera: any;
+let launchImageLibrary: any;
+type ImagePickerResponse = any;
+let Img: any;
+let createVideoThumbnail: any;
+let getImageMetaData: any;
+let getVideoMetaData: any;
+if (Platform.OS !== 'windows') {
+  const imagePicker = require('react-native-image-picker');
+  launchCamera = imagePicker.launchCamera;
+  launchImageLibrary = imagePicker.launchImageLibrary;
+  const compressor = require('react-native-compressor');
+  Img = compressor.Image;
+  createVideoThumbnail = compressor.createVideoThumbnail;
+  getImageMetaData = compressor.getImageMetaData;
+  getVideoMetaData = compressor.getVideoMetaData;
+}
 import { isMac } from '../../App.tsx';
 import { getTextModel } from '../../storage/StorageUtils.ts';
 import { showInfo } from '../util/ToastUtils.ts';
@@ -107,7 +114,10 @@ export const CustomAddFileComponent: React.FC<CustomRenderActionsProps> = ({
             let height = 0;
             if (fileType === FileType.image) {
               pickResult.uri = decodeURI(pickResult.uri);
-              if (format === 'png' || format === 'jpg' || format === 'jpeg') {
+              if (
+                Img &&
+                (format === 'png' || format === 'jpg' || format === 'jpeg')
+              ) {
                 pickResult.uri = await Img.compress(pickResult.uri);
                 const metaData = await getImageMetaData(pickResult.uri);
                 format = metaData.extension;
@@ -130,12 +140,16 @@ export const CustomAddFileComponent: React.FC<CustomRenderActionsProps> = ({
                 localFileUrl = await saveFile(pickResult.uri, fileName);
                 pickResult.uri = localFileUrl!;
               }
-              const thumbnail = await createVideoThumbnail(pickResult.uri);
-              thumbnailUrl =
-                (await saveFile(thumbnail.path, fileName + '.jpeg')) ?? '';
-              const metaData = await getVideoMetaData(pickResult.uri);
-              width = metaData.width;
-              height = metaData.height;
+              if (createVideoThumbnail) {
+                const thumbnail = await createVideoThumbnail(pickResult.uri);
+                thumbnailUrl =
+                  (await saveFile(thumbnail.path, fileName + '.jpeg')) ?? '';
+              }
+              if (getVideoMetaData) {
+                const metaData = await getVideoMetaData(pickResult.uri);
+                width = metaData.width;
+                height = metaData.height;
+              }
             }
 
             if (localFileUrl) {
@@ -410,7 +424,10 @@ const getFiles = async (res: ImagePickerResponse) => {
         }
         let width = media.width;
         let height = media.height;
-        if (format === 'png' || format === 'jpg' || format === 'jpeg') {
+        if (
+          Img &&
+          (format === 'png' || format === 'jpg' || format === 'jpeg')
+        ) {
           media.uri = await Img.compress(media.uri);
           const metaData = await getImageMetaData(media.uri);
           format = metaData.extension;
@@ -418,7 +435,7 @@ const getFiles = async (res: ImagePickerResponse) => {
           height = metaData.ImageHeight;
         }
         let thumbnailUrl;
-        if (fileType === FileType.video) {
+        if (fileType === FileType.video && createVideoThumbnail) {
           const thumbnail = await createVideoThumbnail(media.uri);
           thumbnailUrl =
             (await saveFile(thumbnail.path, fileName + '.jpeg')) ?? '';

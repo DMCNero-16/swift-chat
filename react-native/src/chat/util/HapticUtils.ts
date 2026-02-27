@@ -1,4 +1,3 @@
-import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { HapticFeedbackTypes } from 'react-native-haptic-feedback/src/types.ts';
 import { Platform } from 'react-native';
 import {
@@ -6,6 +5,12 @@ import {
   saveHapticEnabled,
 } from '../../storage/StorageUtils.ts';
 import { isMac } from '../../App.tsx';
+
+let ReactNativeHapticFeedback: any;
+if (Platform.OS !== 'windows') {
+  ReactNativeHapticFeedback =
+    require('react-native-haptic-feedback').default;
+}
 
 let hapticFeedbackEnabled = getHapticEnabled();
 
@@ -26,5 +31,5 @@ export function trigger(method: HapticFeedbackTypes) {
   if (method === HapticFeedbackTypes.selection && Platform.OS === 'android') {
     method = HapticFeedbackTypes.soft;
   }
-  ReactNativeHapticFeedback.trigger(method, hapticOptions);
+  ReactNativeHapticFeedback?.trigger(method, hapticOptions);
 }

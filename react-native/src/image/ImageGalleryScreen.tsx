@@ -19,10 +19,15 @@ import RNFS from 'react-native-fs';
 import { ChatMode } from '../types/Chat';
 import ImageView from 'react-native-image-viewing';
 import { ImageSource } from 'react-native-image-viewing/dist/@types';
-import Share from 'react-native-share';
 import { showInfo } from '../chat/util/ToastUtils';
-import { isMacCatalyst } from '../utils/PlatformUtils';
-import FileViewer from 'react-native-file-viewer';
+import { isMacCatalyst, isWindows } from '../utils/PlatformUtils';
+
+let Share: any;
+let FileViewer: any;
+if (Platform.OS !== 'windows') {
+  Share = require('react-native-share').default;
+  FileViewer = require('react-native-file-viewer').default;
+}
 import { CustomHeaderRightButton } from '../chat/component/CustomHeaderRightButton';
 
 type NavigationProp = NativeStackNavigationProp<RouteParamList>;
@@ -74,7 +79,10 @@ function ImageGalleryScreen(): React.JSX.Element {
           );
           return {
             id: file.name,
-            path: Platform.OS === 'ios' ? file.path : `file://${file.path}`,
+            path:
+              Platform.OS === 'ios' || Platform.OS === 'windows'
+                ? file.path
+                : `file://${file.path}`,
             name: file.name,
             createdAt: isNaN(timestamp)
               ? file.mtime?.getTime() || 0
@@ -158,8 +166,8 @@ function ImageGalleryScreen(): React.JSX.Element {
           ? `${RNFS.DocumentDirectoryPath}/${image.name}`
           : image.path;
 
-      if (isMacCatalyst) {
-        // On Mac, save to Downloads folder
+      if (isMacCatalyst || isWindows) {
+        // On desktop, save to Downloads folder
         const downloadsPath = RNFS.DocumentDirectoryPath.replace(
           '/Documents',
           '/Downloads'
@@ -175,12 +183,14 @@ function ImageGalleryScreen(): React.JSX.Element {
         if (Platform.OS === 'android') {
           filePath = image.path;
         }
-        const shareOptions = {
-          url: filePath,
-          type: 'image/png',
-          title: 'Save Image',
-        };
-        await Share.open(shareOptions);
+        if (Share) {
+          const shareOptions = {
+            url: filePath,
+            type: 'image/png',
+            title: 'Save Image',
+          };
+          await Share.open(shareOptions);
+        }
       }
     } catch (error) {
       console.log('Error saving/sharing image:', error);
@@ -192,11 +202,13 @@ function ImageGalleryScreen(): React.JSX.Element {
   }, []);
 
   const handleOpenImage = useCallback((image: ImageItem, index: number) => {
-    if (isMacCatalyst) {
-      // On Mac, use system file viewer
-      FileViewer.open(image.path).catch(error => {
-        console.log('Error opening file:', error);
-      });
+    if (isMacCatalyst || isWindows) {
+      // On desktop, use system file viewer
+      if (FileViewer) {
+        FileViewer.open(image.path).catch((error: any) => {
+          console.log('Error opening file:', error);
+        });
+      }
     } else {
       // On iOS/Android, use ImageView with swipe support
       setViewerIndex(index);

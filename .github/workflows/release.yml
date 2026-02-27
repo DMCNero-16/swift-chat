@@ -17,7 +17,7 @@ env:
   NEW_VERSION: ${{ github.event.inputs.release_tag }}
   NEW_VERSION_CODE: ${{ github.event.inputs.release_code }}
 jobs:
-  release:
+  release-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,12 +48,61 @@ jobs:
         run: |
           cd react-native/android
           ./gradlew assembleRelease
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: react-native/android/app/build/outputs/apk/release/*.apk
+
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd react-native
+          npm install
+      - name: Initialize react-native-windows
+        run: |
+          cd react-native
+          npx react-native-windows-init --version 0.74.0 --overwrite
+      - name: Build Windows MSIX
+        run: |
+          cd react-native
+          npx react-native run-windows --release --arch x64 --no-launch
+      - name: Upload Windows MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix
+          path: react-native/windows/SwiftChat/AppPackages/**/*.msix
+
+  create-release:
+    needs: [release-android, release-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts/android
+      - name: Download Windows MSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msix
+          path: artifacts/windows
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: "SwiftChat v${{ env.NEW_VERSION }}"
           files: |
-            react-native/android/app/build/outputs/apk/release/*.apk
+            artifacts/android/*.apk
+            artifacts/windows/*.msix
           tag_name: "${{ env.NEW_VERSION }}"
           prerelease: true
           generate_release_notes: true

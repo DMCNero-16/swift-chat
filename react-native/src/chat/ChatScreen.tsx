@@ -13,11 +13,15 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
-import {
-  activateKeepAwake,
-  deactivateKeepAwake,
-} from '@sayem314/react-native-keep-awake';
 import { voiceChatService } from './service/VoiceChatService';
+
+let activateKeepAwake: () => void = () => {};
+let deactivateKeepAwake: () => void = () => {};
+if (Platform.OS !== 'windows') {
+  const keepAwakeModule = require('@sayem314/react-native-keep-awake');
+  activateKeepAwake = keepAwakeModule.activateKeepAwake;
+  deactivateKeepAwake = keepAwakeModule.deactivateKeepAwake;
+}
 import AudioWaveformComponent, {
   AudioWaveformRef,
 } from './component/AudioWaveformComponent';

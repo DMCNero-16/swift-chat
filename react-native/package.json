@@ -7,6 +7,8 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "build:ios": "cd ios && xcodebuild -workspace SwiftChat.xcworkspace -scheme SwiftChat -sdk iphonesimulator -configuration Release -destination generic/platform=iOS CODE_SIGN_IDENTITY=\"\" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO clean archive | xcpretty",
+    "windows": "react-native run-windows",
+    "build:windows": "react-native run-windows --release --arch x64",
     "format": "npx prettier --check '*.{js,ts}'",
     "lint": "npx eslint .",
     "start": "react-native start",
@@ -51,6 +53,7 @@
     "react-native-svg": "^15.4.0",
     "react-native-toast-message": "^2.2.1",
     "react-native-webview": "^13.16.0",
+    "react-native-windows": "0.74.0",
     "react-syntax-highlighter": "^15.5.0",
     "turndown": "^7.2.2"
   },
@@ -77,6 +80,7 @@
     "patch-package": "^8.0.0",
     "prettier": "2.8.8",
     "react-test-renderer": "18.2.0",
+    "@react-native-windows/metro-config": "0.74.0",
     "typescript": "5.0.4"
   },
   "overrides": {

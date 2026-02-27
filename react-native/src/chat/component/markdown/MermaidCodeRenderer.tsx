@@ -192,7 +192,12 @@ const createStyles = (colors: ColorScheme) =>
     codeText: {
       fontSize: 14,
       paddingVertical: 1.3,
-      fontFamily: Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace',
+      fontFamily:
+        Platform.OS === 'ios'
+          ? 'Menlo-Regular'
+          : Platform.OS === 'windows'
+            ? 'Consolas'
+            : 'monospace',
       color: colors.text,
     },
     mermaidRenderer: {

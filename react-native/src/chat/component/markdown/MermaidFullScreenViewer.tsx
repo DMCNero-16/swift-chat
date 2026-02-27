@@ -31,7 +31,10 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import RNFS from 'react-native-fs';
-import Share from 'react-native-share';
+let Share: any;
+if (Platform.OS !== 'windows') {
+  Share = require('react-native-share').default;
+}
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useTheme } from '../../../theme';
 import { isMac } from '../../../App.tsx';
@@ -356,7 +359,9 @@ const MermaidFullScreenViewer: React.FC<MermaidFullScreenViewerProps> = ({
               type: 'image/png',
               title: 'Save Mermaid Diagram',
             };
-            await Share.open(shareOptions);
+            if (Share) {
+              await Share.open(shareOptions);
+            }
           }
         } else if (message.type === 'capture_error') {
           Alert.alert('Error', `Failed to capture image: ${message.message}`);

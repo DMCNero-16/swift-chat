@@ -10,6 +10,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Linking,
   NativeSyntheticEvent,
   Platform,
   StyleSheet,
@@ -19,7 +20,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Share from 'react-native-share';
 import { MessageProps } from 'react-native-gifted-chat';
 import { CustomMarkdownRenderer } from './markdown/CustomMarkdownRenderer.tsx';
 import { MarkedStyles } from 'react-native-marked/src/theme/types.ts';
@@ -31,9 +31,15 @@ import {
   CustomFileListComponent,
   DisplayMode,
 } from './CustomFileListComponent.tsx';
-import FileViewer from 'react-native-file-viewer';
 import { isMac } from '../../App.tsx';
 import { CustomTokenizer } from './markdown/CustomTokenizer.ts';
+
+let Share: any;
+let FileViewer: any;
+if (Platform.OS !== 'windows') {
+  Share = require('react-native-share').default;
+  FileViewer = require('react-native-file-viewer').default;
+}
 import Markdown from './markdown/Markdown.tsx';
 import ImageSpinner from './ImageSpinner.tsx';
 import { State, TapGestureHandler } from 'react-native-gesture-handler';
@@ -260,17 +266,23 @@ const CustomMessageComponent: React.FC<CustomMessageProps> = ({
 
   const handleImagePress = useCallback((pressMode: PressMode, url: string) => {
     if (pressMode === PressMode.Click) {
-      FileViewer.open(url)
-        .then(() => {})
-        .catch(error => {
-          console.log(error);
-        });
+      if (FileViewer) {
+        FileViewer.open(url)
+          .then(() => {})
+          .catch((error: any) => {
+            console.log(error);
+          });
+      } else {
+        Linking.openURL(url).catch(console.log);
+      }
     } else if (pressMode === PressMode.LongPress) {
       trigger(HapticFeedbackTypes.notificationSuccess);
-      const shareOptions = { url: url, type: 'image/png', title: 'AI Image' };
-      Share.open(shareOptions)
-        .then(res => console.log(res))
-        .catch(err => err && console.log(err));
+      if (Share) {
+        const shareOptions = { url: url, type: 'image/png', title: 'AI Image' };
+        Share.open(shareOptions)
+          .then((res: any) => console.log(res))
+          .catch((err: any) => err && console.log(err));
+      }
     }
   }, []);
 

@@ -473,7 +473,12 @@ const createStyles = (colors: ColorScheme) =>
       flex: 1,
       padding: 12,
       color: colors.text,
-      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      fontFamily:
+        Platform.OS === 'ios'
+          ? 'Menlo'
+          : Platform.OS === 'windows'
+            ? 'Consolas'
+            : 'monospace',
       fontSize: 14,
       minWidth: 800,
     },

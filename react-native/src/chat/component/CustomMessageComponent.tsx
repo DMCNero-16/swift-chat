@@ -38,7 +38,9 @@ import { CustomTokenizer } from './markdown/CustomTokenizer.ts';
 const ShareModule =
   Platform.OS !== 'windows' ? require('react-native-share').default : null;
 const FileViewerModule =
-  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-file-viewer').default
+    : null;
 /* eslint-enable @typescript-eslint/no-var-requires */
 import Markdown from './markdown/Markdown.tsx';
 import ImageSpinner from './ImageSpinner.tsx';

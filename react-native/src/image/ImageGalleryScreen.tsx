@@ -26,7 +26,9 @@ import { isMacCatalyst, isWindows } from '../utils/PlatformUtils';
 const ShareModule =
   Platform.OS !== 'windows' ? require('react-native-share').default : null;
 const FileViewerModule =
-  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
+  Platform.OS !== 'windows'
+    ? require('react-native-file-viewer').default
+    : null;
 /* eslint-enable @typescript-eslint/no-var-requires */
 import { CustomHeaderRightButton } from '../chat/component/CustomHeaderRightButton';
 

@@ -22,12 +22,12 @@ import { ImageSource } from 'react-native-image-viewing/dist/@types';
 import { showInfo } from '../chat/util/ToastUtils';
 import { isMacCatalyst, isWindows } from '../utils/PlatformUtils';
 
-let Share: any;
-let FileViewer: any;
-if (Platform.OS !== 'windows') {
-  Share = require('react-native-share').default;
-  FileViewer = require('react-native-file-viewer').default;
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ShareModule =
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const FileViewerModule =
+  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
 import { CustomHeaderRightButton } from '../chat/component/CustomHeaderRightButton';
 
 type NavigationProp = NativeStackNavigationProp<RouteParamList>;
@@ -183,13 +183,13 @@ function ImageGalleryScreen(): React.JSX.Element {
         if (Platform.OS === 'android') {
           filePath = image.path;
         }
-        if (Share) {
+        if (ShareModule) {
           const shareOptions = {
             url: filePath,
             type: 'image/png',
             title: 'Save Image',
           };
-          await Share.open(shareOptions);
+          await ShareModule.open(shareOptions);
         }
       }
     } catch (error) {
@@ -204,8 +204,8 @@ function ImageGalleryScreen(): React.JSX.Element {
   const handleOpenImage = useCallback((image: ImageItem, index: number) => {
     if (isMacCatalyst || isWindows) {
       // On desktop, use system file viewer
-      if (FileViewer) {
-        FileViewer.open(image.path).catch((error: any) => {
+      if (FileViewerModule) {
+        FileViewerModule.open(image.path).catch((error: Error) => {
           console.log('Error opening file:', error);
         });
       }

@@ -26,21 +26,23 @@ import Decimal from '@jsamr/counter-style/lib/es/presets/decimal';
 import Disc from '@jsamr/counter-style/lib/es/presets/disc';
 import { isAndroid } from '../../../utils/PlatformUtils.ts';
 
-let MathView: any;
-if (Platform.OS !== 'windows') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  MathView = require('react-native-math-view').default;
-} else {
-  // Fallback: render math as monospace text on Windows
-  MathView = ({ math, style, renderError }: any) => (
-    <Text style={[{ fontFamily: 'Consolas' }, style]}>{math}</Text>
-  );
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const MathView =
+  Platform.OS !== 'windows'
+    ? require('react-native-math-view').default
+    : // Fallback: render math as monospace text on Windows
+      ({math, style}: {math: string; style: object}) => (
+        <Text style={[{fontFamily: 'Consolas'}, style]}>{math}</Text>
+      );
 import { ColorScheme } from '../../../theme';
 import MermaidCodeRenderer from './MermaidCodeRenderer';
 import HtmlCodeRenderer from './HtmlCodeRenderer';
 import CitationBadge from '../CitationBadge';
 import CopyButton from './CopyButton';
+import { isWindows } from '../../../utils/PlatformUtils.ts';
+
+const monoFont =
+  Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
 
 const CustomCodeHighlighter = lazy(() => import('./CustomCodeHighlighter'));
 let mathViewIndex = 0;
@@ -574,12 +576,7 @@ const createCustomStyles = (colors: ColorScheme) =>
     text: {
       fontSize: 12,
       paddingVertical: 1.3,
-      fontFamily:
-        Platform.OS === 'ios'
-          ? 'Menlo-Regular'
-          : Platform.OS === 'windows'
-            ? 'Consolas'
-            : 'monospace',
+      fontFamily: monoFont,
       color: colors.text,
     },
     codeSpanText: {

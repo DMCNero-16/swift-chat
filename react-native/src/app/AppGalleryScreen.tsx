@@ -35,10 +35,9 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { showInfo } from '../chat/util/ToastUtils';
 import { isMac } from '../App';
 
-let Share: any;
-if (Platform.OS !== 'windows') {
-  Share = require('react-native-share').default;
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ShareModule =
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
 
 type NavigationProp = DrawerNavigationProp<RouteParamList>;
 
@@ -406,8 +405,8 @@ function AppGalleryScreen(): React.JSX.Element {
               type: 'text/html',
               title: 'Save HTML File',
             };
-            if (Share) {
-              await Share.open(shareOptions);
+            if (ShareModule) {
+              await ShareModule.open(shareOptions);
             }
           }
         } catch (error) {

@@ -16,17 +16,16 @@ import { ImageSource } from 'react-native-image-viewing/dist/@types';
 import { isMac } from '../../App.tsx';
 import { getFullFileUrl, saveFile } from '../util/FileUtils.ts';
 
-let Share: any;
-let FileViewer: any;
-let Video: any;
-let getVideoMetaData: any;
-if (Platform.OS !== 'windows') {
-  Share = require('react-native-share').default;
-  FileViewer = require('react-native-file-viewer').default;
-  const compressor = require('react-native-compressor');
-  Video = compressor.Video;
-  getVideoMetaData = compressor.getVideoMetaData;
-}
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires */
+const ShareModule: any =
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+const FileViewerModule: any =
+  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
+const compressorModule: any =
+  Platform.OS !== 'windows' ? require('react-native-compressor') : null;
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires */
+const Video = compressorModule?.Video;
+const getVideoMetaData = compressorModule?.getVideoMetaData;
 import * as Progress from 'react-native-progress';
 import { showInfo } from '../util/ToastUtils.ts';
 import { ColorScheme, useTheme } from '../../theme';
@@ -47,14 +46,15 @@ export enum DisplayMode {
 const MAX_VIDEO_SIZE = 8;
 
 const openInFileViewer = (url: string) => {
-  if (FileViewer) {
-    FileViewer.open(url)
+  if (FileViewerModule) {
+    FileViewerModule
+      .open(url)
       .then(() => {})
-      .catch((error: any) => {
+      .catch((error: Error) => {
         console.log(error);
       });
   } else {
-    Linking.openURL(url).catch((error: any) => {
+    Linking.openURL(url).catch((error: Error) => {
       console.log(error);
     });
   }
@@ -222,13 +222,13 @@ export const CustomFileListComponent: React.FC<CustomFileProps> = ({
         <TouchableOpacity
           onLongPress={() => {
             try {
-              if (Share) {
+              if (ShareModule) {
                 const options = {
                   type: 'text/plain',
                   url: fullFileUrl,
                   showAppsToView: true,
                 };
-                Share.open(options).then();
+                ShareModule.open(options).then();
               } else {
                 openInFileViewer(fullFileUrl);
               }

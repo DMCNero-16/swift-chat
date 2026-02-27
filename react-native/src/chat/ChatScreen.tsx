@@ -15,13 +15,15 @@ import {
 } from 'react-native';
 import { voiceChatService } from './service/VoiceChatService';
 
-let activateKeepAwake: () => void = () => {};
-let deactivateKeepAwake: () => void = () => {};
-if (Platform.OS !== 'windows') {
-  const keepAwakeModule = require('@sayem314/react-native-keep-awake');
-  activateKeepAwake = keepAwakeModule.activateKeepAwake;
-  deactivateKeepAwake = keepAwakeModule.deactivateKeepAwake;
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const keepAwakeModule =
+  Platform.OS !== 'windows'
+    ? require('@sayem314/react-native-keep-awake')
+    : null;
+const activateKeepAwake: () => void =
+  keepAwakeModule?.activateKeepAwake ?? (() => {});
+const deactivateKeepAwake: () => void =
+  keepAwakeModule?.deactivateKeepAwake ?? (() => {});
 import AudioWaveformComponent, {
   AudioWaveformRef,
 } from './component/AudioWaveformComponent';

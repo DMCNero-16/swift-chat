@@ -31,10 +31,9 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import RNFS from 'react-native-fs';
-let Share: any;
-if (Platform.OS !== 'windows') {
-  Share = require('react-native-share').default;
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ShareModule =
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useTheme } from '../../../theme';
 import { isMac } from '../../../App.tsx';
@@ -359,8 +358,8 @@ const MermaidFullScreenViewer: React.FC<MermaidFullScreenViewerProps> = ({
               type: 'image/png',
               title: 'Save Mermaid Diagram',
             };
-            if (Share) {
-              await Share.open(shareOptions);
+            if (ShareModule) {
+              await ShareModule.open(shareOptions);
             }
           }
         } else if (message.type === 'capture_error') {

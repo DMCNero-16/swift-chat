@@ -34,12 +34,12 @@ import {
 import { isMac } from '../../App.tsx';
 import { CustomTokenizer } from './markdown/CustomTokenizer.ts';
 
-let Share: any;
-let FileViewer: any;
-if (Platform.OS !== 'windows') {
-  Share = require('react-native-share').default;
-  FileViewer = require('react-native-file-viewer').default;
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ShareModule =
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const FileViewerModule =
+  Platform.OS !== 'windows' ? require('react-native-file-viewer').default : null;
 import Markdown from './markdown/Markdown.tsx';
 import ImageSpinner from './ImageSpinner.tsx';
 import { State, TapGestureHandler } from 'react-native-gesture-handler';
@@ -266,10 +266,11 @@ const CustomMessageComponent: React.FC<CustomMessageProps> = ({
 
   const handleImagePress = useCallback((pressMode: PressMode, url: string) => {
     if (pressMode === PressMode.Click) {
-      if (FileViewer) {
-        FileViewer.open(url)
+      if (FileViewerModule) {
+        FileViewerModule
+          .open(url)
           .then(() => {})
-          .catch((error: any) => {
+          .catch((error: Error) => {
             console.log(error);
           });
       } else {
@@ -277,11 +278,11 @@ const CustomMessageComponent: React.FC<CustomMessageProps> = ({
       }
     } else if (pressMode === PressMode.LongPress) {
       trigger(HapticFeedbackTypes.notificationSuccess);
-      if (Share) {
+      if (ShareModule) {
         const shareOptions = { url: url, type: 'image/png', title: 'AI Image' };
-        Share.open(shareOptions)
-          .then((res: any) => console.log(res))
-          .catch((err: any) => err && console.log(err));
+        ShareModule.open(shareOptions)
+          .then((res: string) => console.log(res))
+          .catch((err: Error) => err && console.log(err));
       }
     }
   }, []);

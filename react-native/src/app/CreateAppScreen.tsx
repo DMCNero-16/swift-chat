@@ -24,7 +24,11 @@ import { saveApp, generateAppId } from '../storage/StorageUtils';
 import { SavedApp } from '../types/Chat';
 import { injectErrorScript } from '../chat/component/markdown/htmlUtils';
 import { isMac } from '../App';
+import { isWindows } from '../utils/PlatformUtils';
 import DocumentPicker from 'react-native-document-picker';
+
+const monoFont =
+  Platform.OS === 'ios' ? 'Menlo' : isWindows ? 'Consolas' : 'monospace';
 
 type NavigationProp = DrawerNavigationProp<RouteParamList>;
 
@@ -473,12 +477,7 @@ const createStyles = (colors: ColorScheme) =>
       flex: 1,
       padding: 12,
       color: colors.text,
-      fontFamily:
-        Platform.OS === 'ios'
-          ? 'Menlo'
-          : Platform.OS === 'windows'
-            ? 'Consolas'
-            : 'monospace',
+      fontFamily: monoFont,
       fontSize: 14,
       minWidth: 800,
     },

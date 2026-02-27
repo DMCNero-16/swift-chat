@@ -17,23 +17,18 @@ import {
 import { saveFile } from '../util/FileUtils.ts';
 import RNFS from 'react-native-fs';
 
-let launchCamera: any;
-let launchImageLibrary: any;
-type ImagePickerResponse = any;
-let Img: any;
-let createVideoThumbnail: any;
-let getImageMetaData: any;
-let getVideoMetaData: any;
-if (Platform.OS !== 'windows') {
-  const imagePicker = require('react-native-image-picker');
-  launchCamera = imagePicker.launchCamera;
-  launchImageLibrary = imagePicker.launchImageLibrary;
-  const compressor = require('react-native-compressor');
-  Img = compressor.Image;
-  createVideoThumbnail = compressor.createVideoThumbnail;
-  getImageMetaData = compressor.getImageMetaData;
-  getVideoMetaData = compressor.getVideoMetaData;
-}
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires */
+const imagePickerModule =
+  Platform.OS !== 'windows' ? require('react-native-image-picker') : null;
+const compressorModule =
+  Platform.OS !== 'windows' ? require('react-native-compressor') : null;
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires */
+const launchCamera = imagePickerModule?.launchCamera;
+const launchImageLibrary = imagePickerModule?.launchImageLibrary;
+const Img = compressorModule?.Image;
+const createVideoThumbnail = compressorModule?.createVideoThumbnail;
+const getImageMetaData = compressorModule?.getImageMetaData;
+const getVideoMetaData = compressorModule?.getVideoMetaData;
 import { isMac } from '../../App.tsx';
 import { getTextModel } from '../../storage/StorageUtils.ts';
 import { showInfo } from '../util/ToastUtils.ts';

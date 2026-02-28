@@ -74,6 +74,11 @@ jobs:
         run: |
           cd react-native
           npx react-native-windows-init --version 0.74.0 --overwrite
+      - name: Set minimum Windows SDK target
+        shell: pwsh
+        run: |
+          $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
+          (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
       - name: Build Windows MSIX
         run: |
           cd react-native

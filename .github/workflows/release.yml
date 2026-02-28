@@ -83,7 +83,7 @@ jobs:
       - name: Initialize react-native-windows
         run: |
           cd react-native
-          npx react-native-windows-init --version 0.74.0 --overwrite --projectName SwiftChat --namespace SwiftChat
+          npx react-native-windows-init --version 0.74.0 --overwrite --namespace SwiftChat
       - name: Patch appxmanifest MinVersion
         shell: pwsh
         run: |
@@ -116,7 +116,7 @@ jobs:
       - name: Run autolink
         run: |
           cd react-native
-          npx react-native autolink-windows --sln windows/swift-chat.sln --proj windows/SwiftChat/SwiftChat.vcxproj
+          npx react-native autolink-windows --sln windows/SwiftChat.sln --proj windows/SwiftChat/SwiftChat.vcxproj
       - name: Restore NuGet packages (after autolink)
         shell: pwsh
         run: |

@@ -15,7 +15,13 @@ const documentPickerModule =
 /* eslint-enable @typescript-eslint/no-var-requires */
 const pick = documentPickerModule?.pick;
 const types = documentPickerModule?.types;
-type DocumentPickerResponse = { uri: string; name: string | null; size: number | null; type: string | null; fileCopyUri: string | null };
+type DocumentPickerResponse = {
+  uri: string;
+  name: string | null;
+  size: number | null;
+  type: string | null;
+  fileCopyUri: string | null;
+};
 import { saveFile } from '../util/FileUtils.ts';
 import RNFS from 'react-native-fs';
 

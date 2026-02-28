@@ -74,23 +74,16 @@ jobs:
         run: |
           cd react-native
           npx react-native-windows-init --version 0.74.0 --overwrite
-      - name: Set minimum Windows SDK target
+      - name: Patch SDK min version for compatibility
         shell: pwsh
         run: |
           $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
           (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
           Get-ChildItem -Path react-native/windows, react-native/node_modules -Recurse -Filter '*.csproj' | ForEach-Object {
             $content = Get-Content $_.FullName -Raw
-            if ($content -match '10\.0\.16299') {
-              $content -replace '10\.0\.16299', '10.0.17763' | Set-Content $_.FullName
-              Write-Host "Updated: $($_.FullName)"
-            }
-          }
-          Get-ChildItem -Path react-native/windows, react-native/node_modules -Recurse -Filter '*.vcxproj' | ForEach-Object {
-            $content = Get-Content $_.FullName -Raw
-            if ($content -match '10\.0\.16299') {
-              $content -replace '10\.0\.16299', '10.0.17763' | Set-Content $_.FullName
-              Write-Host "Updated: $($_.FullName)"
+            if ($content -match 'TargetPlatformMinVersion.*10\.0\.16299') {
+              $content -replace '(<TargetPlatformMinVersion>)10\.0\.16299\.0(</TargetPlatformMinVersion>)', '${1}10.0.17763.0${2}' | Set-Content $_.FullName
+              Write-Host "Patched: $($_.FullName)"
             }
           }
       - name: Build Windows MSIX

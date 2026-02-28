@@ -93,8 +93,10 @@ jobs:
           if ($available -notcontains '10.0.19041.0') {
             $target = ($available | Where-Object { [version]$_ -ge [version]'10.0.19041.0' } | Sort-Object { [version]$_ } | Select-Object -First 1)
             if (-not $target) { $target = ($available | Sort-Object { [version]$_ } | Select-Object -Last 1) }
-            Write-Host "Retargeting SDK from 10.0.19041.0 to $target"
-            (Get-Content $propsFile) -replace '10\.0\.19041\.0', $target | Set-Content $propsFile
+            Write-Host "Retargeting vcxproj SDK from 10.0.19041.0 to $target"
+            $content = Get-Content $propsFile -Raw
+            $content = $content -replace '(<WindowsTargetPlatformVersion[^>]*>)10\.0\.19041\.0(</WindowsTargetPlatformVersion>)', "`${1}$target`${2}"
+            Set-Content $propsFile $content
           }
       - name: Run autolink
         run: |

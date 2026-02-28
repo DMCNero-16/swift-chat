@@ -83,8 +83,8 @@ jobs:
         run: |
           cd react-native
           npx react-native run-windows --release --arch x64 --no-launch --no-autolink
-      - name: Upload MSIX artifact
+      - name: Upload Windows build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SwiftChat-Windows-MSIX
-          path: react-native/windows/swift-chat/AppPackages/
+          name: SwiftChat-Windows
+          path: react-native/windows/x64/Release/swift-chat/

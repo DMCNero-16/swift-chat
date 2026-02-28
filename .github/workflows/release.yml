@@ -84,18 +84,11 @@ jobs:
         run: |
           cd react-native
           npx react-native-windows-init --version 0.74.0 --overwrite
-      - name: Patch appxmanifest and document-picker for compatibility
+      - name: Patch appxmanifest MinVersion
         shell: pwsh
         run: |
           $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
           (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
-          Get-ChildItem -Path react-native/node_modules/react-native-document-picker -Recurse -Filter '*.csproj' | ForEach-Object {
-            $content = Get-Content $_.FullName -Raw
-            if ($content -match 'TargetPlatformMinVersion.*10\.0\.16299') {
-              $content -replace '(<TargetPlatformMinVersion>)10\.0\.16299\.0(</TargetPlatformMinVersion>)', '${1}10.0.17763.0${2}' | Set-Content $_.FullName
-              Write-Host "Patched: $($_.FullName)"
-            }
-          }
       - name: Run autolink
         run: |
           cd react-native

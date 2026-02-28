@@ -25,7 +25,9 @@ import { SavedApp } from '../types/Chat';
 import { injectErrorScript } from '../chat/component/markdown/htmlUtils';
 import { isMac } from '../App';
 import { isWindows } from '../utils/PlatformUtils';
-import DocumentPicker from 'react-native-document-picker';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const DocumentPicker =
+  Platform.OS !== 'windows' ? require('react-native-document-picker') : null;
 
 const monoFont =
   Platform.OS === 'ios' ? 'Menlo' : isWindows ? 'Consolas' : 'monospace';
@@ -82,6 +84,9 @@ function CreateAppScreen(): React.JSX.Element {
 
   // Import file from document picker
   const handleImportFile = useCallback(async () => {
+    if (!DocumentPicker) {
+      return;
+    }
     try {
       const result = await DocumentPicker.pick({
         type: [DocumentPicker.types.plainText, 'text/html', 'public.html'],

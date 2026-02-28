@@ -24,5 +24,8 @@ module.exports = {
     'react-native-fs': {
       platforms: { windows: null },
     },
+    'react-native-document-picker': {
+      platforms: { windows: null },
+    },
   },
 };

@@ -9,11 +9,13 @@ import {
 } from 'react-native';
 import React, { useRef, useEffect, useCallback } from 'react';
 import { ChatMode, FileInfo, FileType } from '../../types/Chat.ts';
-import {
-  pick,
-  types,
-  DocumentPickerResponse,
-} from 'react-native-document-picker';
+/* eslint-disable @typescript-eslint/no-var-requires */
+const documentPickerModule =
+  Platform.OS !== 'windows' ? require('react-native-document-picker') : null;
+/* eslint-enable @typescript-eslint/no-var-requires */
+const pick = documentPickerModule?.pick;
+const types = documentPickerModule?.types;
+type DocumentPickerResponse = { uri: string; name: string | null; size: number | null; type: string | null; fileCopyUri: string | null };
 import { saveFile } from '../util/FileUtils.ts';
 import RNFS from 'react-native-fs';
 
@@ -234,6 +236,10 @@ export const CustomAddFileComponent: React.FC<CustomRenderActionsProps> = ({
   }, []);
 
   const handleChooseFiles = async () => {
+    if (!pick) {
+      showInfo('File picker is not available on this platform');
+      return;
+    }
     let chooseType = [];
     const isImageMode = chatModeRef.current === ChatMode.Image;
     try {

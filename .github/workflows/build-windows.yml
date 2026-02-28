@@ -40,10 +40,19 @@ jobs:
               Write-Host "Patched: $($_.FullName)"
             }
           }
+      - name: Detect installed Windows SDK
+        id: detect-sdk
+        shell: pwsh
+        run: |
+          $sdkDir = "C:\Program Files (x86)\Windows Kits\10\Include"
+          $versions = Get-ChildItem $sdkDir -Directory | Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } | Sort-Object Name -Descending
+          $latest = $versions[0].Name
+          Write-Host "Found SDK: $latest"
+          echo "SDK_VERSION=$latest" >> $env:GITHUB_OUTPUT
       - name: Build Windows app (Release)
         run: |
           cd react-native
-          npx react-native run-windows --release --arch x64 --no-launch
+          npx react-native run-windows --release --arch x64 --no-launch --msbuild-args "/p:WindowsTargetPlatformVersion=${{ steps.detect-sdk.outputs.SDK_VERSION }}"
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v4
         with:

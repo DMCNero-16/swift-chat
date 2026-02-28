@@ -89,6 +89,21 @@ jobs:
         run: |
           $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
           (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
+      - name: Create Windows entry stubs for incompatible modules
+        shell: pwsh
+        run: |
+          $stubs = @{
+            'react-native-math-view/src/index.windows.js' = 'module.exports = { default: () => null };'
+            'react-native-haptic-feedback/src/index.windows.js' = 'module.exports = { default: { trigger: () => {} } };'
+          }
+          foreach ($entry in $stubs.GetEnumerator()) {
+            $filePath = "react-native/node_modules/$($entry.Key)"
+            $dir = Split-Path $filePath -Parent
+            if (Test-Path $dir) {
+              Set-Content $filePath $entry.Value
+              Write-Host "Created: $filePath"
+            }
+          }
       - name: Run autolink
         run: |
           cd react-native

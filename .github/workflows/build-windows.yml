@@ -19,16 +19,11 @@ jobs:
       - name: Install Windows SDK 10.0.19041.0
         shell: pwsh
         run: |
-          # RNW 0.74 requires SDK 10.0.19041.0 which may not be on the runner
           $sdkDir = "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0"
           if (-not (Test-Path $sdkDir)) {
-            Write-Host "SDK 10.0.19041.0 not found, installing..."
-            $installerUrl = "https://go.microsoft.com/fwlink/p/?linkid=2120843"
-            Invoke-WebRequest -Uri $installerUrl -OutFile "$env:TEMP\winsdksetup.exe"
+            Write-Host "Installing SDK 10.0.19041.0..."
+            Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?linkid=2120843" -OutFile "$env:TEMP\winsdksetup.exe"
             Start-Process -Wait -FilePath "$env:TEMP\winsdksetup.exe" -ArgumentList "/features + /quiet /norestart"
-            Write-Host "SDK installed."
-          } else {
-            Write-Host "SDK 10.0.19041.0 already available."
           }
       - name: Configure npm
         run: npm config set legacy-peer-deps true
@@ -45,6 +40,23 @@ jobs:
         run: |
           $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
           (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
+      - name: Create Windows entry stubs for incompatible modules
+        shell: pwsh
+        run: |
+          # These modules lack index.windows.js — Metro can't resolve them on Windows
+          # Create empty stubs so the bundler can resolve and our runtime guards handle the rest
+          $stubs = @{
+            'react-native-math-view/src/index.windows.js' = 'module.exports = { default: () => null };'
+            'react-native-haptic-feedback/src/index.windows.js' = 'module.exports = { default: { trigger: () => {} } };'
+          }
+          foreach ($entry in $stubs.GetEnumerator()) {
+            $filePath = "react-native/node_modules/$($entry.Key)"
+            $dir = Split-Path $filePath -Parent
+            if (Test-Path $dir) {
+              Set-Content $filePath $entry.Value
+              Write-Host "Created: $filePath"
+            }
+          }
       - name: Run autolink
         run: |
           cd react-native

@@ -82,9 +82,14 @@ jobs:
       - name: Build Windows app (Release)
         run: |
           cd react-native
-          npx react-native run-windows --release --arch x64 --no-launch --no-autolink
-      - name: Upload Windows build artifact
+          npx react-native run-windows --release --arch x64 --no-launch --no-deploy --no-autolink
+      - name: Create MSIX package
+        shell: pwsh
+        run: |
+          $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
+          & $msbuild react-native/windows/swift-chat.sln /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:AppxPackageSigningEnabled=false /p:UapAppxPackageBuildMode=SideloadOnly /t:swift-chat:Publish
+      - name: Upload MSIX artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SwiftChat-Windows
-          path: react-native/windows/x64/Release/swift-chat/
+          name: SwiftChat-Windows-MSIX
+          path: react-native/windows/swift-chat/AppPackages/

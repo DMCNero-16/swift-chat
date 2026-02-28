@@ -122,15 +122,20 @@ jobs:
         run: |
           $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
           & $msbuild react-native/windows/swift-chat.sln /t:Restore /p:RestoreProjectStyle=PackagesConfig /p:RestorePackagesConfig=true /p:Platform=x64 /p:Configuration=Release
-      - name: Build Windows MSIX
+      - name: Build Windows app (Release)
         run: |
           cd react-native
-          npx react-native run-windows --release --arch x64 --no-launch --no-autolink
+          npx react-native run-windows --release --arch x64 --no-launch --no-deploy --no-autolink
+      - name: Create MSIX package
+        shell: pwsh
+        run: |
+          $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
+          & $msbuild react-native/windows/swift-chat.sln /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:AppxPackageSigningEnabled=false /p:UapAppxPackageBuildMode=SideloadOnly /t:swift-chat:Publish
       - name: Upload Windows MSIX
         uses: actions/upload-artifact@v4
         with:
           name: windows-msix
-          path: react-native/windows/x64/Release/swift-chat/
+          path: react-native/windows/swift-chat/AppPackages/
 
   create-release:
     needs: [release-android, release-windows]

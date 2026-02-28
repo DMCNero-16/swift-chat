@@ -21,5 +21,8 @@ module.exports = {
     'react-native-share': {
       platforms: { windows: null },
     },
+    'react-native-fs': {
+      platforms: { windows: null },
+    },
   },
 };

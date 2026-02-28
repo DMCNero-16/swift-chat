@@ -49,6 +49,11 @@ jobs:
           $latest = $versions[0].Name
           Write-Host "Found SDK: $latest"
           echo "SDK_VERSION=$latest" >> $env:GITHUB_OUTPUT
+      - name: Restore NuGet packages for linked modules
+        shell: pwsh
+        run: |
+          $sln = 'react-native/windows/swift-chat.sln'
+          nuget restore $sln
       - name: Build Windows app (Release)
         run: |
           cd react-native

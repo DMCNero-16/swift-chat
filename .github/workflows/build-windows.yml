@@ -38,7 +38,7 @@ jobs:
       - name: Patch appxmanifest MinVersion
         shell: pwsh
         run: |
-          $manifest = 'react-native/windows/SwiftChat/Package.appxmanifest'
+          $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
           (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
       - name: Create Windows entry stubs for platform-split modules
         shell: pwsh
@@ -73,12 +73,12 @@ jobs:
       - name: Run autolink
         run: |
           cd react-native
-          npx react-native autolink-windows --sln windows/SwiftChat.sln --proj windows/SwiftChat/SwiftChat.vcxproj
+          npx react-native autolink-windows --sln windows/swift-chat.sln --proj windows/swift-chat/swift-chat.vcxproj
       - name: Restore NuGet packages (after autolink)
         shell: pwsh
         run: |
           $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
-          & $msbuild react-native/windows/SwiftChat.sln /t:Restore /p:RestoreProjectStyle=PackagesConfig /p:RestorePackagesConfig=true /p:Platform=x64 /p:Configuration=Release
+          & $msbuild react-native/windows/swift-chat.sln /t:Restore /p:RestoreProjectStyle=PackagesConfig /p:RestorePackagesConfig=true /p:Platform=x64 /p:Configuration=Release
       - name: Build Windows app (Release)
         run: |
           cd react-native
@@ -87,4 +87,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SwiftChat-Windows-MSIX
-          path: react-native/windows/SwiftChat/AppPackages/
+          path: react-native/windows/swift-chat/AppPackages/

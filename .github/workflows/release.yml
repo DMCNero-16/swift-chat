@@ -79,25 +79,22 @@ jobs:
         run: |
           $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
           (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
-          Get-ChildItem -Path react-native/windows, react-native/node_modules -Recurse -Filter '*.csproj' | ForEach-Object {
+          Get-ChildItem -Path react-native/node_modules/react-native-document-picker -Recurse -Filter '*.csproj' | ForEach-Object {
             $content = Get-Content $_.FullName -Raw
             if ($content -match 'TargetPlatformMinVersion.*10\.0\.16299') {
               $content -replace '(<TargetPlatformMinVersion>)10\.0\.16299\.0(</TargetPlatformMinVersion>)', '${1}10.0.17763.0${2}' | Set-Content $_.FullName
-              Write-Host "Patched csproj: $($_.FullName)"
+              Write-Host "Patched: $($_.FullName)"
             }
           }
           $sdkDir = "C:\Program Files (x86)\Windows Kits\10\Include"
           $available = Get-ChildItem $sdkDir -Directory | Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } | ForEach-Object { $_.Name }
+          Write-Host "Available SDKs: $($available -join ', ')"
+          $propsFile = 'react-native/node_modules/react-native-windows/PropertySheets/External/Microsoft.ReactNative.WindowsSdk.Default.props'
           if ($available -notcontains '10.0.19041.0') {
-            $target = ($available | Sort-Object)[-1]
-            Write-Host "Retargeting vcxproj to $target"
-            Get-ChildItem -Path react-native/windows, react-native/node_modules -Recurse -Filter '*.vcxproj' | ForEach-Object {
-              $content = Get-Content $_.FullName -Raw
-              if ($content -match '<WindowsTargetPlatformVersion>10\.0\.19041\.0</WindowsTargetPlatformVersion>') {
-                $content -replace '<WindowsTargetPlatformVersion>10\.0\.19041\.0</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$target</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
-                Write-Host "Patched vcxproj: $($_.FullName)"
-              }
-            }
+            $target = ($available | Where-Object { [version]$_ -ge [version]'10.0.19041.0' } | Sort-Object { [version]$_ } | Select-Object -First 1)
+            if (-not $target) { $target = ($available | Sort-Object { [version]$_ } | Select-Object -Last 1) }
+            Write-Host "Retargeting SDK from 10.0.19041.0 to $target"
+            (Get-Content $propsFile) -replace '10\.0\.19041\.0', $target | Set-Content $propsFile
           }
       - name: Run autolink
         run: |

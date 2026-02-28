@@ -40,21 +40,34 @@ jobs:
         run: |
           $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
           (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
-      - name: Create Windows entry stubs for incompatible modules
+      - name: Create Windows entry stubs for platform-split modules
         shell: pwsh
         run: |
-          # These modules lack index.windows.js — Metro can't resolve them on Windows
-          # Create empty stubs so the bundler can resolve and our runtime guards handle the rest
-          $stubs = @{
-            'react-native-math-view/src/index.windows.js' = 'module.exports = { default: () => null };'
-            'react-native-haptic-feedback/src/index.windows.js' = 'module.exports = { default: { trigger: () => {} } };'
-          }
-          foreach ($entry in $stubs.GetEnumerator()) {
-            $filePath = "react-native/node_modules/$($entry.Key)"
-            $dir = Split-Path $filePath -Parent
-            if (Test-Path $dir) {
-              Set-Content $filePath $entry.Value
-              Write-Host "Created: $filePath"
+          # Find all .ios.js/.ios.ts files that have .android counterparts but no .windows or generic version
+          # These will fail Metro resolution on Windows platform
+          $nmDir = 'react-native/node_modules'
+          Get-ChildItem -Path $nmDir -Recurse -File -Include '*.ios.js','*.ios.ts','*.ios.tsx' | ForEach-Object {
+            $iosFile = $_.FullName
+            $dir = $_.DirectoryName
+            $name = $_.Name
+            # Extract base name and extension: foo.ios.js -> foo, js
+            if ($name -match '^(.+)\.ios\.(js|ts|tsx)$') {
+              $base = $Matches[1]
+              $ext = $Matches[2]
+              $androidFile = Join-Path $dir "$base.android.$ext"
+              $genericFile = Join-Path $dir "$base.$ext"
+              $windowsFile = Join-Path $dir "$base.windows.js"
+              $nativeFile = Join-Path $dir "$base.native.$ext"
+              # Only create stub if android exists but no generic/windows/native version
+              if ((Test-Path $androidFile) -and -not (Test-Path $genericFile) -and -not (Test-Path $windowsFile) -and -not (Test-Path $nativeFile)) {
+                # Skip react-native and react-native-windows internal files
+                $rel = $iosFile.Replace($nmDir, '').TrimStart('\', '/')
+                if ($rel -notmatch '^react-native[\\/]' -and $rel -notmatch '^react-native-windows[\\/]') {
+                  # Copy the iOS version as Windows stub (best effort compatibility)
+                  Copy-Item $iosFile $windowsFile
+                  Write-Host "Created stub: $windowsFile (copied from ios)"
+                }
+              }
             }
           }
       - name: Run autolink

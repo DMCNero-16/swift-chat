@@ -52,7 +52,7 @@ jobs:
       - name: Build Windows app (Release)
         run: |
           cd react-native
-          npx react-native run-windows --release --arch x64 --no-launch --msbuild-args "/p:WindowsTargetPlatformVersion=${{ steps.detect-sdk.outputs.SDK_VERSION }}"
+          npx react-native run-windows --release --arch x64 --no-launch --msbuildprops WindowsTargetPlatformVersion=${{ steps.detect-sdk.outputs.SDK_VERSION }}
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v4
         with:

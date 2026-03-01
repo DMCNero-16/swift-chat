@@ -80,6 +80,8 @@ jobs:
       - name: Create self-signed certificate and MSIX package
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Path "dist" -Force
+
           # Generate self-signed certificate for MSIX signing
           $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=SwiftChat-Dev" `
             -KeyUsage DigitalSignature -FriendlyName "SwiftChat Development" `

@@ -133,16 +133,16 @@ jobs:
           $distDir = 'dist/SwiftChat'
           New-Item -ItemType Directory -Path $distDir -Force
           Copy-Item "$buildDir\*" $distDir -Recurse
-          $vclibsDir = Get-ChildItem "C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs\14.0\Appx\Retail\x64" -ErrorAction SilentlyContinue
-          if (-not $vclibsDir) {
-            $found = Get-ChildItem "C:\Program Files*" -Recurse -Filter "vcruntime140_app.dll" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match 'x64' -and $_.FullName -match 'Retail' } | Select-Object -First 1
-            if ($found) { $vclibsDir = $found.DirectoryName }
-          }
-          if ($vclibsDir -and (Test-Path $vclibsDir)) {
-            Copy-Item "$vclibsDir\vcruntime140_app.dll" $distDir -ErrorAction SilentlyContinue
-            Copy-Item "$vclibsDir\vcruntime140_1_app.dll" $distDir -ErrorAction SilentlyContinue
-            Copy-Item "$vclibsDir\msvcp140_app.dll" $distDir -ErrorAction SilentlyContinue
-            Write-Host "Copied UWP VCLibs from: $vclibsDir"
+          $vclibsUrl = 'https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx'
+          $vclibsAppx = "$env:TEMP\vclibs.appx"
+          $vclibsExtract = "$env:TEMP\vclibs"
+          Invoke-WebRequest -Uri $vclibsUrl -OutFile $vclibsAppx
+          New-Item -ItemType Directory -Path $vclibsExtract -Force
+          Rename-Item $vclibsAppx "$vclibsAppx.zip"
+          Expand-Archive "$vclibsAppx.zip" $vclibsExtract -Force
+          foreach ($dll in @('vcruntime140_app.dll','vcruntime140_1_app.dll','msvcp140_app.dll','msvcp140_1_app.dll')) {
+            $found = Get-ChildItem $vclibsExtract -Recurse -Filter $dll -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) { Copy-Item $found.FullName $distDir }
           }
           $vcToolsDir = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -find VC\Redist\MSVC\*\x64\*.CRT
           if ($vcToolsDir) {

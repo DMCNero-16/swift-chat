@@ -19,13 +19,13 @@ import AppGalleryScreen from './app/AppGalleryScreen.tsx';
 import AppViewerScreen from './app/AppViewerScreen.tsx';
 import CreateAppScreen from './app/CreateAppScreen.tsx';
 import ImageGalleryScreen from './image/ImageGalleryScreen.tsx';
-import { isAndroid, isMacCatalyst } from './utils/PlatformUtils';
+import { isAndroid, isMacCatalyst, isWindows } from './utils/PlatformUtils';
 import { ThemeProvider, useTheme } from './theme';
 import { configureErrorHandling } from './utils/ErrorUtils';
 import { migrateOpenAICompatConfig } from './storage/StorageUtils.ts';
 import { SearchWebView } from './websearch/components/SearchWebView';
 
-export const isMac = isMacCatalyst;
+export const isMac = isMacCatalyst || isWindows;
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const minWidth = screenWidth > screenHeight ? screenHeight : screenWidth;
 const width = minWidth > 434 ? 300 : minWidth * 0.83;

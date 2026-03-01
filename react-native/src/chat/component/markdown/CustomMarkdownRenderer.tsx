@@ -24,15 +24,26 @@ import { Citation, PressMode } from '../../../types/Chat.ts';
 import MarkedList from '@jsamr/react-native-li';
 import Decimal from '@jsamr/counter-style/lib/es/presets/decimal';
 import Disc from '@jsamr/counter-style/lib/es/presets/disc';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import MathView from 'react-native-math-view';
 import { isAndroid } from '../../../utils/PlatformUtils.ts';
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const MathView =
+  Platform.OS !== 'windows'
+    ? require('react-native-math-view').default
+    : // Fallback: render math as monospace text on Windows
+      ({ math, style }: { math: string; style: object }) => (
+        <Text style={[{ fontFamily: 'Consolas' }, style]}>{math}</Text>
+      );
+/* eslint-enable @typescript-eslint/no-var-requires */
 import { ColorScheme } from '../../../theme';
 import MermaidCodeRenderer from './MermaidCodeRenderer';
 import HtmlCodeRenderer from './HtmlCodeRenderer';
 import CitationBadge from '../CitationBadge';
 import CopyButton from './CopyButton';
+import { isWindows } from '../../../utils/PlatformUtils.ts';
+
+// prettier-ignore
+const monoFont = Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
 
 const CustomCodeHighlighter = lazy(() => import('./CustomCodeHighlighter'));
 let mathViewIndex = 0;
@@ -566,7 +577,7 @@ const createCustomStyles = (colors: ColorScheme) =>
     text: {
       fontSize: 12,
       paddingVertical: 1.3,
-      fontFamily: Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace',
+      fontFamily: monoFont,
       color: colors.text,
     },
     codeSpanText: {

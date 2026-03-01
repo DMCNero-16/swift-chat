@@ -13,6 +13,10 @@ import MermaidRenderer from './MermaidRenderer';
 import CopyButton from './CopyButton';
 import { vs2015, github } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { Platform } from 'react-native';
+import { isWindows } from '../../../utils/PlatformUtils.ts';
+
+// prettier-ignore
+const monoFont = Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
 import { useAppContext } from '../../../history/AppProvider.tsx';
 
 const CustomCodeHighlighter = React.lazy(
@@ -192,7 +196,7 @@ const createStyles = (colors: ColorScheme) =>
     codeText: {
       fontSize: 14,
       paddingVertical: 1.3,
-      fontFamily: Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace',
+      fontFamily: monoFont,
       color: colors.text,
     },
     mermaidRenderer: {

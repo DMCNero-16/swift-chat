@@ -15,6 +15,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run build ios
         run: |
-          cd react-native && npm i
+          cd react-native && npm i --legacy-peer-deps
           cd ios && pod install && cd ..
           npm run build:ios

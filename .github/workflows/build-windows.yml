@@ -1,0 +1,155 @@
+name: Build for Windows
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Windows SDK 10.0.19041.0
+        shell: pwsh
+        run: |
+          $sdkDir = "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0"
+          if (-not (Test-Path $sdkDir)) {
+            Write-Host "Installing SDK 10.0.19041.0..."
+            Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?linkid=2120843" -OutFile "$env:TEMP\winsdksetup.exe"
+            Start-Process -Wait -FilePath "$env:TEMP\winsdksetup.exe" -ArgumentList "/features + /quiet /norestart"
+          }
+      - name: Configure npm
+        run: npm config set legacy-peer-deps true
+      - name: Install dependencies
+        run: |
+          cd react-native
+          npm install
+      - name: Initialize react-native-windows
+        run: |
+          cd react-native
+          npx react-native-windows-init --version 0.74.0 --overwrite --namespace SwiftChat
+      - name: Patch appxmanifest MinVersion
+        shell: pwsh
+        run: |
+          $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
+          (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
+      - name: Create Windows entry stubs for platform-split modules
+        shell: pwsh
+        run: |
+          $nmDir = 'react-native/node_modules'
+          Get-ChildItem -Path $nmDir -Recurse -File -Include '*.ios.js','*.ios.ts','*.ios.tsx' | ForEach-Object {
+            $iosFile = $_.FullName
+            $dir = $_.DirectoryName
+            $name = $_.Name
+            if ($name -match '^(.+)\.ios\.(js|ts|tsx)$') {
+              $base = $Matches[1]
+              $ext = $Matches[2]
+              $androidFile = Join-Path $dir "$base.android.$ext"
+              $genericFile = Join-Path $dir "$base.$ext"
+              $windowsFile = Join-Path $dir "$base.windows.js"
+              $nativeFile = Join-Path $dir "$base.native.$ext"
+              if ((Test-Path $androidFile) -and -not (Test-Path $genericFile) -and -not (Test-Path $windowsFile) -and -not (Test-Path $nativeFile)) {
+                $rel = $iosFile.Substring($nmDir.Length).TrimStart('\', '/')
+                if ($rel -notmatch '^react-native[\\\/]' -and $rel -notmatch '^react-native-windows[\\\/]' -and $rel -notmatch '^@react-native[\\\/]') {
+                  Copy-Item $iosFile $windowsFile
+                  Write-Host "Created stub: $windowsFile (copied from ios)"
+                }
+              }
+            }
+          }
+      - name: Run autolink
+        run: |
+          cd react-native
+          npx react-native autolink-windows --sln windows/swift-chat.sln --proj windows/swift-chat/swift-chat.vcxproj
+      - name: Restore NuGet packages (after autolink)
+        shell: pwsh
+        run: |
+          $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
+          & $msbuild react-native/windows/swift-chat.sln /t:Restore /p:RestoreProjectStyle=PackagesConfig /p:RestorePackagesConfig=true /p:Platform=x64 /p:Configuration=Release
+      - name: Build Windows app (Release)
+        run: |
+          cd react-native
+          npx react-native run-windows --release --arch x64 --no-launch --no-deploy --no-autolink
+      - name: Create self-signed certificate and MSIX package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "dist" -Force
+
+          # Generate self-signed certificate for MSIX signing
+          $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=SwiftChat-Dev" `
+            -KeyUsage DigitalSignature -FriendlyName "SwiftChat Development" `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+
+          $thumbprint = $cert.Thumbprint
+          Write-Host "Certificate thumbprint: $thumbprint"
+
+          # Export .cer for user to install
+          Export-Certificate -Cert "Cert:\CurrentUser\My\$thumbprint" -FilePath "dist\SwiftChat-Dev.cer"
+
+          # Export .pfx for MSIX signing
+          $password = ConvertTo-SecureString -String "SwiftChat2024" -Force -AsPlainText
+          Export-PfxCertificate -Cert "Cert:\CurrentUser\My\$thumbprint" -FilePath "$env:TEMP\sign.pfx" -Password $password
+
+          # Update appxmanifest with certificate subject
+          $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
+          (Get-Content $manifest) -replace 'Publisher="[^"]*"', 'Publisher="CN=SwiftChat-Dev"' | Set-Content $manifest
+
+          # Build MSIX package
+          $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
+          & $msbuild react-native/windows/swift-chat.sln `
+            /p:Configuration=Release /p:Platform=x64 `
+            /p:AppxBundle=Never `
+            /p:AppxPackageSigningEnabled=true `
+            /p:PackageCertificateThumbprint=$thumbprint `
+            /p:UapAppxPackageBuildMode=SideloadOnly `
+            /t:swift-chat:Publish
+
+          # Find the generated MSIX
+          $msix = Get-ChildItem "react-native/windows/AppPackages" -Recurse -Filter "*.msix" | Select-Object -First 1
+          if ($msix) {
+            Copy-Item $msix.FullName "dist\SwiftChat-Setup.msix"
+            Write-Host "MSIX created: $($msix.Name) ($([math]::Round($msix.Length/1MB))MB)"
+          } else {
+            Write-Host "ERROR: No MSIX found"
+            Get-ChildItem "react-native/windows/AppPackages" -Recurse | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+
+          # Create install script for users
+          $installScript = @'
+          @echo off
+          echo === SwiftChat Installer ===
+          echo.
+          echo Step 1: Installing certificate...
+          certutil -addstore TrustedPeople "%~dp0SwiftChat-Dev.cer"
+          if %errorlevel% neq 0 (
+            echo Failed to install certificate. Please run as Administrator.
+            pause
+            exit /b 1
+          )
+          echo.
+          echo Step 2: Installing SwiftChat...
+          powershell -Command "Add-AppxPackage '%~dp0SwiftChat-Setup.msix'"
+          if %errorlevel% neq 0 (
+            echo Installation failed.
+            pause
+            exit /b 1
+          )
+          echo.
+          echo SwiftChat installed successfully! You can find it in the Start Menu.
+          pause
+          '@
+          Set-Content "dist\Install-SwiftChat.bat" $installScript
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwiftChat-Windows-Installer
+          path: dist/

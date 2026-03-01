@@ -34,7 +34,11 @@ import RNFS from 'react-native-fs';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { showInfo } from '../chat/util/ToastUtils';
 import { isMac } from '../App';
-import Share from 'react-native-share';
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const ShareModule =
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+/* eslint-enable @typescript-eslint/no-var-requires */
 
 type NavigationProp = DrawerNavigationProp<RouteParamList>;
 
@@ -402,7 +406,9 @@ function AppGalleryScreen(): React.JSX.Element {
               type: 'text/html',
               title: 'Save HTML File',
             };
-            await Share.open(shareOptions);
+            if (ShareModule) {
+              await ShareModule.open(shareOptions);
+            }
           }
         } catch (error) {
           console.log('Error saving file:', error);

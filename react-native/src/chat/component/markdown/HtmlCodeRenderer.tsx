@@ -12,7 +12,11 @@ import { ColorScheme } from '../../../theme';
 import HtmlPreviewRenderer from './HtmlPreviewRenderer';
 import { vs2015, github } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { Platform } from 'react-native';
+import { isWindows } from '../../../utils/PlatformUtils.ts';
 import { useAppContext } from '../../../history/AppProvider';
+
+// prettier-ignore
+const monoFont = Platform.OS === 'ios' ? 'Menlo-Regular' : isWindows ? 'Consolas' : 'monospace';
 import { getLatestHtmlCode, setLatestHtmlCode } from '../../util/DiffUtils';
 import { applyDiff } from '../../util/ApplyDiff';
 import { showInfo } from '../../util/ToastUtils';
@@ -397,7 +401,7 @@ const createStyles = (colors: ColorScheme) =>
     codeText: {
       fontSize: 14,
       paddingVertical: 1.3,
-      fontFamily: Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace',
+      fontFamily: monoFont,
       color: colors.text,
     },
     htmlRenderer: {

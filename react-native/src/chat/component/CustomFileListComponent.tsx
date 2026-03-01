@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
+  Linking,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,11 +13,21 @@ import { FileInfo, FileType } from '../../types/Chat.ts';
 import { CustomAddFileComponent } from './CustomAddFileComponent.tsx';
 import ImageView from 'react-native-image-viewing';
 import { ImageSource } from 'react-native-image-viewing/dist/@types';
-import Share from 'react-native-share';
-import FileViewer from 'react-native-file-viewer';
 import { isMac } from '../../App.tsx';
 import { getFullFileUrl, saveFile } from '../util/FileUtils.ts';
-import { getVideoMetaData, Video } from 'react-native-compressor';
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const ShareModule =
+  Platform.OS !== 'windows' ? require('react-native-share').default : null;
+const FileViewerModule =
+  Platform.OS !== 'windows'
+    ? require('react-native-file-viewer').default
+    : null;
+const compressorModule =
+  Platform.OS !== 'windows' ? require('react-native-compressor') : null;
+/* eslint-enable @typescript-eslint/no-var-requires */
+const Video = compressorModule?.Video;
+const getVideoMetaData = compressorModule?.getVideoMetaData;
 import * as Progress from 'react-native-progress';
 import { showInfo } from '../util/ToastUtils.ts';
 import { ColorScheme, useTheme } from '../../theme';
@@ -36,11 +48,15 @@ export enum DisplayMode {
 const MAX_VIDEO_SIZE = 8;
 
 const openInFileViewer = (url: string) => {
-  FileViewer.open(url)
-    .then(() => {})
-    .catch(error => {
+  if (FileViewerModule) {
+    FileViewerModule.open(url).catch((error: Error) => {
       console.log(error);
     });
+  } else {
+    Linking.openURL(url).catch((error: Error) => {
+      console.log(error);
+    });
+  }
 };
 
 const CircularProgress = ({
@@ -90,6 +106,9 @@ export const CustomFileListComponent: React.FC<CustomFileProps> = ({
   }, [files, mode]);
 
   const handleCompression = useCallback(async () => {
+    if (!Video) {
+      return;
+    }
     for (const file of filesRef.current) {
       if (
         !isCompressing.current &&
@@ -202,12 +221,16 @@ export const CustomFileListComponent: React.FC<CustomFileProps> = ({
         <TouchableOpacity
           onLongPress={() => {
             try {
-              const options = {
-                type: 'text/plain',
-                url: fullFileUrl,
-                showAppsToView: true,
-              };
-              Share.open(options).then();
+              if (ShareModule) {
+                const options = {
+                  type: 'text/plain',
+                  url: fullFileUrl,
+                  showAppsToView: true,
+                };
+                ShareModule.open(options).then();
+              } else {
+                openInFileViewer(fullFileUrl);
+              }
             } catch (error) {
               console.log('Error opening file:', error);
             }

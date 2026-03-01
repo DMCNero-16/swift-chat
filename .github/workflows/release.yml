@@ -17,7 +17,7 @@ env:
   NEW_VERSION: ${{ github.event.inputs.release_tag }}
   NEW_VERSION_CODE: ${{ github.event.inputs.release_code }}
 jobs:
-  release:
+  release-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
           cd react-native
           chmod +x release.sh
           ./release.sh ${{ env.NEW_VERSION }} ${{ env.NEW_VERSION_CODE }}
-          npm i
+          npm i --legacy-peer-deps
           cd ..
           git diff
           git add .
@@ -48,12 +48,161 @@ jobs:
         run: |
           cd react-native/android
           ./gradlew assembleRelease
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: react-native/android/app/build/outputs/apk/release/*.apk
+
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Windows SDK 10.0.19041.0
+        shell: pwsh
+        run: |
+          $sdkDir = "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0"
+          if (-not (Test-Path $sdkDir)) {
+            Write-Host "SDK 10.0.19041.0 not found, installing..."
+            Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?linkid=2120843" -OutFile "$env:TEMP\winsdksetup.exe"
+            Start-Process -Wait -FilePath "$env:TEMP\winsdksetup.exe" -ArgumentList "/features + /quiet /norestart"
+            Write-Host "SDK installed."
+          }
+      - name: Configure npm
+        run: npm config set legacy-peer-deps true
+      - name: Install dependencies
+        run: |
+          cd react-native
+          npm install
+      - name: Initialize react-native-windows
+        run: |
+          cd react-native
+          npx react-native-windows-init --version 0.74.0 --overwrite --namespace SwiftChat
+      - name: Patch appxmanifest MinVersion
+        shell: pwsh
+        run: |
+          $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
+          (Get-Content $manifest) -replace 'MinVersion="10.0.16299.0"', 'MinVersion="10.0.17763.0"' | Set-Content $manifest
+      - name: Create Windows entry stubs for platform-split modules
+        shell: pwsh
+        run: |
+          $nmDir = 'react-native/node_modules'
+          Get-ChildItem -Path $nmDir -Recurse -File -Include '*.ios.js','*.ios.ts','*.ios.tsx' | ForEach-Object {
+            $iosFile = $_.FullName
+            $dir = $_.DirectoryName
+            $name = $_.Name
+            if ($name -match '^(.+)\.ios\.(js|ts|tsx)$') {
+              $base = $Matches[1]
+              $ext = $Matches[2]
+              $androidFile = Join-Path $dir "$base.android.$ext"
+              $genericFile = Join-Path $dir "$base.$ext"
+              $windowsFile = Join-Path $dir "$base.windows.js"
+              $nativeFile = Join-Path $dir "$base.native.$ext"
+              if ((Test-Path $androidFile) -and -not (Test-Path $genericFile) -and -not (Test-Path $windowsFile) -and -not (Test-Path $nativeFile)) {
+                $rel = $iosFile.Substring($nmDir.Length).TrimStart('\', '/')
+                if ($rel -notmatch '^react-native[\\\/]' -and $rel -notmatch '^react-native-windows[\\\/]' -and $rel -notmatch '^@react-native[\\\/]') {
+                  Copy-Item $iosFile $windowsFile
+                  Write-Host "Created stub: $windowsFile"
+                }
+              }
+            }
+          }
+      - name: Run autolink
+        run: |
+          cd react-native
+          npx react-native autolink-windows --sln windows/swift-chat.sln --proj windows/swift-chat/swift-chat.vcxproj
+      - name: Restore NuGet packages (after autolink)
+        shell: pwsh
+        run: |
+          $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
+          & $msbuild react-native/windows/swift-chat.sln /t:Restore /p:RestoreProjectStyle=PackagesConfig /p:RestorePackagesConfig=true /p:Platform=x64 /p:Configuration=Release
+      - name: Build Windows app (Release)
+        run: |
+          cd react-native
+          npx react-native run-windows --release --arch x64 --no-launch --no-deploy --no-autolink
+      - name: Bundle VC++ runtime and create installer
+        shell: pwsh
+        run: |
+          $buildDir = 'react-native/windows/x64/Release/swift-chat'
+          $distDir = 'dist/SwiftChat'
+          New-Item -ItemType Directory -Path $distDir -Force
+          Copy-Item "$buildDir\*" $distDir -Recurse
+          $vclibsUrl = 'https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx'
+          $vclibsAppx = "$env:TEMP\vclibs.appx"
+          $vclibsExtract = "$env:TEMP\vclibs"
+          Invoke-WebRequest -Uri $vclibsUrl -OutFile $vclibsAppx
+          New-Item -ItemType Directory -Path $vclibsExtract -Force
+          Rename-Item $vclibsAppx "$vclibsAppx.zip"
+          Expand-Archive "$vclibsAppx.zip" $vclibsExtract -Force
+          foreach ($dll in @('vcruntime140_app.dll','vcruntime140_1_app.dll','msvcp140_app.dll','msvcp140_1_app.dll')) {
+            $found = Get-ChildItem $vclibsExtract -Recurse -Filter $dll -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) { Copy-Item $found.FullName $distDir }
+          }
+          $vcToolsDir = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -find VC\Redist\MSVC\*\x64\*.CRT
+          if ($vcToolsDir) {
+            $crtDir = $vcToolsDir | Select-Object -First 1
+            Copy-Item "$crtDir\vcruntime140.dll" $distDir -ErrorAction SilentlyContinue
+            Copy-Item "$crtDir\vcruntime140_1.dll" $distDir -ErrorAction SilentlyContinue
+            Copy-Item "$crtDir\msvcp140.dll" $distDir -ErrorAction SilentlyContinue
+          }
+          $issContent = @"
+          [Setup]
+          AppName=SwiftChat
+          AppVersion=${{ env.NEW_VERSION }}
+          DefaultDirName={autopf}\SwiftChat
+          DefaultGroupName=SwiftChat
+          OutputDir=..\installer
+          OutputBaseFilename=SwiftChat-Setup-x64
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesAllowed=x64compatible
+          ArchitecturesInstallIn64BitMode=x64compatible
+          UninstallDisplayIcon={app}\swift-chat.exe
+          [Files]
+          Source: "*"; DestDir: "{app}"; Flags: recursesubdirs
+          [Icons]
+          Name: "{group}\SwiftChat"; Filename: "{app}\swift-chat.exe"
+          Name: "{autodesktop}\SwiftChat"; Filename: "{app}\swift-chat.exe"; Tasks: desktopicon
+          [Tasks]
+          Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
+          [Run]
+          Filename: "{app}\swift-chat.exe"; Description: "Launch SwiftChat"; Flags: nowait postinstall skipifsilent
+          "@
+          Set-Content "$distDir\setup.iss" $issContent
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "$distDir\setup.iss"
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-setup
+          path: dist/installer/SwiftChat-Setup-x64.exe
+
+  create-release:
+    needs: [release-android, release-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts/android
+      - name: Download Windows MSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msix
+          path: artifacts/windows
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: "SwiftChat v${{ env.NEW_VERSION }}"
           files: |
-            react-native/android/app/build/outputs/apk/release/*.apk
+            artifacts/android/*.apk
+            artifacts/windows/*.msix
           tag_name: "${{ env.NEW_VERSION }}"
           prerelease: true
           generate_release_notes: true

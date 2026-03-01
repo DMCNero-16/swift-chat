@@ -7,6 +7,8 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "build:ios": "cd ios && xcodebuild -workspace SwiftChat.xcworkspace -scheme SwiftChat -sdk iphonesimulator -configuration Release -destination generic/platform=iOS CODE_SIGN_IDENTITY=\"\" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO clean archive | xcpretty",
+    "windows": "react-native run-windows",
+    "build:windows": "react-native run-windows --release --arch x64",
     "format": "npx prettier --check '*.{js,ts}'",
     "lint": "npx eslint .",
     "start": "react-native start",
@@ -42,7 +44,11 @@
     "react-native-marked": "^6.0.7",
     "react-native-math-view": "^3.9.5",
     "react-native-mmkv": "^2.12.2",
+    "base-64": "^1.0.0",
     "react-native-polyfill-globals": "^3.1.0",
+    "react-native-url-polyfill": "^2.0.0",
+    "text-encoding": "^0.7.0",
+    "web-streams-polyfill": "^3.3.3",
     "react-native-progress": "^5.0.1",
     "react-native-reanimated": "^3.14.0",
     "react-native-safe-area-context": "^4.10.8",
@@ -51,6 +57,7 @@
     "react-native-svg": "^15.4.0",
     "react-native-toast-message": "^2.2.1",
     "react-native-webview": "^13.16.0",
+    "react-native-windows": "0.74.0",
     "react-syntax-highlighter": "^15.5.0",
     "turndown": "^7.2.2"
   },
@@ -83,6 +90,9 @@
     "@react-native-clipboard/clipboard": {
       "react-native": "~0.74.1",
       "react-native-windows": "~0.74.1"
+    },
+    "react-native-windows": {
+      "react-native": "$react-native"
     },
     "prismjs": "^1.30.0"
   },

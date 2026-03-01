@@ -24,7 +24,13 @@ import { saveApp, generateAppId } from '../storage/StorageUtils';
 import { SavedApp } from '../types/Chat';
 import { injectErrorScript } from '../chat/component/markdown/htmlUtils';
 import { isMac } from '../App';
-import DocumentPicker from 'react-native-document-picker';
+import { isWindows } from '../utils/PlatformUtils';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const DocumentPicker =
+  Platform.OS !== 'windows' ? require('react-native-document-picker') : null;
+
+const monoFont =
+  Platform.OS === 'ios' ? 'Menlo' : isWindows ? 'Consolas' : 'monospace';
 
 type NavigationProp = DrawerNavigationProp<RouteParamList>;
 
@@ -78,6 +84,9 @@ function CreateAppScreen(): React.JSX.Element {
 
   // Import file from document picker
   const handleImportFile = useCallback(async () => {
+    if (!DocumentPicker) {
+      return;
+    }
     try {
       const result = await DocumentPicker.pick({
         type: [DocumentPicker.types.plainText, 'text/html', 'public.html'],
@@ -473,7 +482,7 @@ const createStyles = (colors: ColorScheme) =>
       flex: 1,
       padding: 12,
       color: colors.text,
-      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      fontFamily: monoFont,
       fontSize: 14,
       minWidth: 800,
     },

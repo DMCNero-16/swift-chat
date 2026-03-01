@@ -126,16 +126,50 @@ jobs:
         run: |
           cd react-native
           npx react-native run-windows --release --arch x64 --no-launch --no-deploy --no-autolink
-      - name: Create MSIX package
+      - name: Bundle VC++ runtime and create installer
         shell: pwsh
         run: |
-          $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
-          & $msbuild react-native/windows/swift-chat.sln /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:AppxPackageSigningEnabled=false /p:UapAppxPackageBuildMode=SideloadOnly /t:swift-chat:Publish
-      - name: Upload Windows MSIX
+          $buildDir = 'react-native/windows/x64/Release/swift-chat'
+          $distDir = 'dist/SwiftChat'
+          New-Item -ItemType Directory -Path $distDir -Force
+          Copy-Item "$buildDir\*" $distDir -Recurse
+          $vcToolsDir = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -find VC\Redist\MSVC\*\x64\*.CRT
+          if ($vcToolsDir) {
+            $crtDir = $vcToolsDir | Select-Object -First 1
+            Copy-Item "$crtDir\vcruntime140.dll" $distDir
+            Copy-Item "$crtDir\vcruntime140_1.dll" $distDir
+            Copy-Item "$crtDir\msvcp140.dll" $distDir
+          }
+          $issContent = @"
+          [Setup]
+          AppName=SwiftChat
+          AppVersion=${{ env.NEW_VERSION }}
+          DefaultDirName={autopf}\SwiftChat
+          DefaultGroupName=SwiftChat
+          OutputDir=..\installer
+          OutputBaseFilename=SwiftChat-Setup-x64
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesAllowed=x64compatible
+          ArchitecturesInstallIn64BitMode=x64compatible
+          UninstallDisplayIcon={app}\swift-chat.exe
+          [Files]
+          Source: "*"; DestDir: "{app}"; Flags: recursesubdirs
+          [Icons]
+          Name: "{group}\SwiftChat"; Filename: "{app}\swift-chat.exe"
+          Name: "{autodesktop}\SwiftChat"; Filename: "{app}\swift-chat.exe"; Tasks: desktopicon
+          [Tasks]
+          Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
+          [Run]
+          Filename: "{app}\swift-chat.exe"; Description: "Launch SwiftChat"; Flags: nowait postinstall skipifsilent
+          "@
+          Set-Content "$distDir\setup.iss" $issContent
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "$distDir\setup.iss"
+      - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-msix
-          path: react-native/windows/AppPackages/
+          name: windows-setup
+          path: dist/installer/SwiftChat-Setup-x64.exe
 
   create-release:
     needs: [release-android, release-windows]

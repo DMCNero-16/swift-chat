@@ -77,80 +77,77 @@ jobs:
         run: |
           cd react-native
           npx react-native run-windows --release --arch x64 --no-launch --no-deploy --no-autolink
-      - name: Bundle VC++ runtime and create installer
+      - name: Create self-signed certificate and MSIX package
         shell: pwsh
         run: |
-          $buildDir = 'react-native/windows/x64/Release/swift-chat'
-          $distDir = 'dist/SwiftChat'
-          New-Item -ItemType Directory -Path $distDir -Force
+          # Generate self-signed certificate for MSIX signing
+          $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=SwiftChat-Dev" `
+            -KeyUsage DigitalSignature -FriendlyName "SwiftChat Development" `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
 
-          # Copy build output
-          Copy-Item "$buildDir\*" $distDir -Recurse
+          $thumbprint = $cert.Thumbprint
+          Write-Host "Certificate thumbprint: $thumbprint"
 
-          # Download official Microsoft VCLibs appx and extract _app.dll files
-          $vclibsUrl = 'https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx'
-          $vclibsAppx = "$env:TEMP\vclibs.appx"
-          $vclibsExtract = "$env:TEMP\vclibs"
-          Invoke-WebRequest -Uri $vclibsUrl -OutFile $vclibsAppx
-          New-Item -ItemType Directory -Path $vclibsExtract -Force
-          # Appx is a zip file
-          Rename-Item $vclibsAppx "$vclibsAppx.zip"
-          Expand-Archive "$vclibsAppx.zip" $vclibsExtract -Force
-          $dllFiles = @('vcruntime140_app.dll', 'vcruntime140_1_app.dll', 'msvcp140_app.dll', 'msvcp140_1_app.dll')
-          foreach ($dll in $dllFiles) {
-            $found = Get-ChildItem $vclibsExtract -Recurse -Filter $dll -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) {
-              Copy-Item $found.FullName $distDir
-              Write-Host "Bundled: $dll"
-            }
+          # Export .cer for user to install
+          Export-Certificate -Cert "Cert:\CurrentUser\My\$thumbprint" -FilePath "dist\SwiftChat-Dev.cer"
+
+          # Export .pfx for MSIX signing
+          $password = ConvertTo-SecureString -String "SwiftChat2024" -Force -AsPlainText
+          Export-PfxCertificate -Cert "Cert:\CurrentUser\My\$thumbprint" -FilePath "$env:TEMP\sign.pfx" -Password $password
+
+          # Update appxmanifest with certificate subject
+          $manifest = 'react-native/windows/swift-chat/Package.appxmanifest'
+          (Get-Content $manifest) -replace 'Publisher="[^"]*"', 'Publisher="CN=SwiftChat-Dev"' | Set-Content $manifest
+
+          # Build MSIX package
+          $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\amd64\MSBuild.exe
+          & $msbuild react-native/windows/swift-chat.sln `
+            /p:Configuration=Release /p:Platform=x64 `
+            /p:AppxBundle=Never `
+            /p:AppxPackageSigningEnabled=true `
+            /p:PackageCertificateThumbprint=$thumbprint `
+            /p:UapAppxPackageBuildMode=SideloadOnly `
+            /t:swift-chat:Publish
+
+          # Find the generated MSIX
+          $msix = Get-ChildItem "react-native/windows/AppPackages" -Recurse -Filter "*.msix" | Select-Object -First 1
+          if ($msix) {
+            Copy-Item $msix.FullName "dist\SwiftChat-Setup.msix"
+            Write-Host "MSIX created: $($msix.Name) ($([math]::Round($msix.Length/1MB))MB)"
+          } else {
+            Write-Host "ERROR: No MSIX found"
+            Get-ChildItem "react-native/windows/AppPackages" -Recurse | ForEach-Object { Write-Host $_.FullName }
+            exit 1
           }
 
-          # Also copy regular VC++ runtime
-          $vcToolsDir = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -find VC\Redist\MSVC\*\x64\*.CRT
-          if ($vcToolsDir) {
-            $crtDir = $vcToolsDir | Select-Object -First 1
-            Copy-Item "$crtDir\vcruntime140.dll" $distDir -ErrorAction SilentlyContinue
-            Copy-Item "$crtDir\vcruntime140_1.dll" $distDir -ErrorAction SilentlyContinue
-            Copy-Item "$crtDir\msvcp140.dll" $distDir -ErrorAction SilentlyContinue
-          }
-
-          # List all DLLs to verify
-          Write-Host "DLLs in dist:"
-          Get-ChildItem "$distDir\*.dll" | ForEach-Object { Write-Host "  $($_.Name) ($([math]::Round($_.Length/1KB))KB)" }
-
-          # Create Inno Setup script
-          $issContent = @"
-          [Setup]
-          AppName=SwiftChat
-          AppVersion=2.7.0
-          DefaultDirName={autopf}\SwiftChat
-          DefaultGroupName=SwiftChat
-          OutputDir=..\installer
-          OutputBaseFilename=SwiftChat-Setup-x64
-          Compression=lzma2
-          SolidCompression=yes
-          ArchitecturesAllowed=x64compatible
-          ArchitecturesInstallIn64BitMode=x64compatible
-          UninstallDisplayIcon={app}\swift-chat.exe
-
-          [Files]
-          Source: "*"; DestDir: "{app}"; Flags: recursesubdirs
-
-          [Icons]
-          Name: "{group}\SwiftChat"; Filename: "{app}\swift-chat.exe"
-          Name: "{autodesktop}\SwiftChat"; Filename: "{app}\swift-chat.exe"; Tasks: desktopicon
-
-          [Tasks]
-          Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
-
-          [Run]
-          Filename: "{app}\swift-chat.exe"; Description: "Launch SwiftChat"; Flags: nowait postinstall skipifsilent
-          "@
-
-          Set-Content "$distDir\setup.iss" $issContent
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "$distDir\setup.iss"
+          # Create install script for users
+          $installScript = @'
+          @echo off
+          echo === SwiftChat Installer ===
+          echo.
+          echo Step 1: Installing certificate...
+          certutil -addstore TrustedPeople "%~dp0SwiftChat-Dev.cer"
+          if %errorlevel% neq 0 (
+            echo Failed to install certificate. Please run as Administrator.
+            pause
+            exit /b 1
+          )
+          echo.
+          echo Step 2: Installing SwiftChat...
+          powershell -Command "Add-AppxPackage '%~dp0SwiftChat-Setup.msix'"
+          if %errorlevel% neq 0 (
+            echo Installation failed.
+            pause
+            exit /b 1
+          )
+          echo.
+          echo SwiftChat installed successfully! You can find it in the Start Menu.
+          pause
+          '@
+          Set-Content "dist\Install-SwiftChat.bat" $installScript
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: SwiftChat-Windows-Setup
-          path: dist/installer/SwiftChat-Setup-x64.exe
+          name: SwiftChat-Windows-Installer
+          path: dist/

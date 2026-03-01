@@ -135,7 +135,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-msix
-          path: react-native/windows/swift-chat/AppPackages/
+          path: react-native/windows/AppPackages/
 
   create-release:
     needs: [release-android, release-windows]
